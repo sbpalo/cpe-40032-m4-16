@@ -13,6 +13,9 @@
 Tile = Class{}
 
 function Tile:init(x, y, color, variety)
+
+    SHINY_TILE = 0.98
+
     -- board positions
     self.gridX = x
     self.gridY = y
@@ -25,16 +28,16 @@ function Tile:init(x, y, color, variety)
     self.color = color
     self.variety = variety
 
-    --initialize shiny tile w/ 10% chance
-    self.shiny = math.random() > shinytile and true or false
 
-    if self.shiny then 
-        print (x, y)
-    end 
-    self.shinyTable = {
-        timer = nil,
-        factor = 255
-    }
+    --SHINY TILES
+   
+    self.shiny = math.random() > SHINY_TILE and true or false
+    
+    if self.shiny then
+        print(x, y)
+    end
+
+    self.shinyTable = { timer = nil,  factor = 255 } 
 end
 
 function Tile:update(dt)
@@ -49,21 +52,40 @@ function Tile:swap(tile)
 end
 
 function Tile:render(x, y)
+   
     -- draw shadow
     love.graphics.setColor(34, 32, 52, 255)
     love.graphics.draw(gTextures['main'], gFrames['tiles'][self.color][self.variety],
-    self.x + x + 2, self.y + y + 2)
+       self.x + x + 2, self.y + y + 2)
+    
+     -- draw tile itself
+     love.graphics.setColor(255, 255, 255, 255)
+     love.graphics.draw(gTextures['main'], gFrames['tiles'][self.color][self.variety],
+         self.x + x, self.y + y)
 
-    --if it is shiny, draw a yellowish shadow instead of dark 
-    if self.shiny then 
-        love.graphics.setBlendMode('add') 
-        love.graphics.setColor(252, 194, 1, 200, self.shinyTable.factor)
-        love.graphics.rectangle('line', (self.gridX - 1 )* 32 + (VIRTUAL_WIDTH - 272), (self.gridY - 1)* 32 +16, 32, 32, 4)
-        love.graphics.setBlendMode('alpha')
+         if self.shiny then
+            love.graphics.setColor(255, 255, 255, self.shinyTable.factor)
+            love.graphics.rectangle('fill', (self.gridX - 1) * 32 + (VIRTUAL_WIDTH - 270),
+                (self.gridY - 1) * 32 + 18, 30, 30, 4)
+           
+            if not self.shinyTable.timer then
+                                
+                self.shinyTable.timer = Timer.tween(0.5, {
+                    [self.shinyTable] = { factor = 0 }
+                }):finish(function()
+                    Timer.tween(0.5, {
+                        [self.shinyTable] = { factor = 120 }
+                    }):finish(function() 
+                        self.shinyTable.timer = nil
+                    end)
+                end)
+            end
+        
+        end
 
-    end 
-    -- draw tile itself
-    love.graphics.setColor(255, 255, 255, 255)
-    love.graphics.draw(gTextures['main'], gFrames['tiles'][self.color][self.variety],
-        self.x + x, self.y + y)
+
+    if DEBUG then
+        love.graphics.setFont(gFonts['small'])
+        love.graphics.print(self.gridX .. "," .. self.gridY, self.x + x + 10, self.y + y + 10)
+    end
 end
